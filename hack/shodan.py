@@ -2,7 +2,7 @@ import sys
 import shodan
 
 # Sua chave API fornecida
-API_KEY = "i3gwQyJmXNX02q5ddFxYeJvycvK146KY"
+API_KEY = "..."
 
 try:
     api = shodan.Shodan(API_KEY)

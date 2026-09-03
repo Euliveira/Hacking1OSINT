@@ -6,8 +6,8 @@ from telethon.errors import RPCError, UsernameInvalidError, UsernameNotOccupiedE
 # ==============================================================================
 # CONFIGURAÇÕES DA API DO TELEGRAM (Obtenha em https://my.telegram.org)
 # ==============================================================================
-API_ID = 37275908 # Substitua pelo seu API_ID (inteiro)
-API_HASH = "cd5599096bbd2de1763339c25de37676"  # Substitua pelo seu API_HASH (string)
+API_ID =  # Substitua pelo seu API_ID (inteiro)
+API_HASH = ".."  # Substitua pelo seu API_HASH (string)
 SESSION_NAME = "sessao_investigacao"
 
 

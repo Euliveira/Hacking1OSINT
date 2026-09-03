@@ -12,8 +12,8 @@ from telethon.tl.types import (
 # ---------------------------------------------------------------------
 # CREDENCIAIS DA API DO TELEGRAM (Obtenha em my.telegram.org)
 # ---------------------------------------------------------------------
-API_ID = 37275908          # Substitua pelo seu API ID (número inteiro)
-API_HASH = 'cd5599096bbd2de1763339c25de37676'  # Substitua pelo seu API Hash (string)
+API_ID = input("Sua api_id: ")          # Substitua pelo seu API ID (número inteiro)
+API_HASH = input("Sua api_hash: ")  # Substitua pelo seu API Hash (string)
 
 def gerar_relatorio_html(dados, fotos_base64):
     """Gera um relatório HTML interativo com o estilo dark mode / cyber."""

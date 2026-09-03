@@ -2,8 +2,8 @@ from telethon import TelegramClient
 import asyncio
 
 # Insira suas credenciais fixas diretamente aqui
-API_ID = 37275908                 # Coloque seu número de API ID (sem aspas)
-API_HASH = 'cd5599096bbd2de1763339c25de37676'   # Coloque seu API Hash entre as aspas
+API_ID = input("Cole sua api_id: ")                 # Coloque seu número de API ID (sem aspas)
+API_HASH = input("Cole sua api_hash: ")    # Coloque seu API Hash entre as aspas
 
 async def main():
     # Inicializa a sessão (na primeira execução, pedirá seu telefone e o código enviado ao seu Telegram)

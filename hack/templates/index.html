@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IDS - Command Center</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #010409;
+            --neon-blue: #00f2ff;
+            --neon-red: #ff3131;
+            --glass-bg: rgba(2, 12, 20, 0.95);
+        }
+
+        body, html {
+            margin: 0; padding: 0;
+            width: 100vw; height: 100vh;
+            background-color: var(--bg-dark);
+            color: white; font-family: 'Share Tech Mono', monospace;
+            overflow: hidden;
+        }
+
+        .monitor-frame {
+            position: absolute;
+            width: 100%; height: 100%;
+            background: url('https://upload.wikimedia.org/wikipedia/commons/8/80/World_map_-_low_resolution.svg') no-repeat center;
+            background-size: 90%;
+            filter: invert(1) opacity(0.12) hue-rotate(180deg);
+            z-index: 0;
+        }
+
+        #trafficCanvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .ui-container {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        .main-view {
+            flex-grow: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .live-clock {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--neon-blue);
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+            text-shadow: 0 0 10px var(--neon-blue);
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .header h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.4rem;
+            margin: 0;
+            text-shadow: 0 0 15px var(--neon-blue);
+        }
+
+        .threat-badge {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--neon-blue);
+            border: 1px solid var(--neon-blue);
+            padding: 3px 8px;
+            border-radius: 3px;
+            background: rgba(0, 242, 255, 0.1);
+            box-shadow: 0 0 8px rgba(0, 242, 255, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .threat-badge.critical {
+            color: var(--neon-red);
+            border: 1px solid var(--neon-red);
+            background: rgba(255, 49, 49, 0.1);
+            box-shadow: 0 0 8px rgba(255, 49, 49, 0.3);
+            animation: badgePulse 1.5s infinite;
+        }
+
+        .threat-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--neon-blue);
+            box-shadow: 0 0 6px var(--neon-blue);
+        }
+
+        .critical .threat-dot {
+            background: var(--neon-red);
+            box-shadow: 0 0 6px var(--neon-red);
+            animation: dotBlink 1s infinite;
+        }
+
+        @keyframes badgePulse {
+            0%, 100% { box-shadow: 0 0 8px rgba(255, 49, 49, 0.3); }
+            50% { box-shadow: 0 0 16px rgba(255, 49, 49, 0.6); }
+        }
+
+        @keyframes dotBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.2; }
+        }
+
+        .central-alert-overlay {
+            position: absolute;
+            top: 38%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 50;
+            width: 90%;
+            max-width: 400px;
+            display: none;
+        }
+
+        .intrusion-card {
+            background: rgba(40, 0, 0, 0.9);
+            border: 2px solid var(--neon-red);
+            padding: 30px 20px;
+            text-align: center;
+            border-radius: 10px;
+            box-shadow: 0 0 40px rgba(255, 49, 49, 0.5);
+            backdrop-filter: blur(10px);
+            animation: alertPulse 1.2s infinite ease-in-out;
+        }
+
+        .intrusion-card .fa-biohazard {
+            animation: rotateSlow 4s linear infinite;
+            color: var(--neon-red);
+            text-shadow: 0 0 15px var(--neon-red);
+        }
+
+        @keyframes rotateSlow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes alertPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+        }
+
+        .attack-details-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 10px;
+            right: 10px;
+            background: rgba(10, 0, 0, 0.9);
+            border: 1px solid var(--neon-blue);
+            padding: 15px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            font-size: 0.7rem;
+            border-radius: 5px;
+            z-index: 40;
+            transition: border-color 0.5s;
+        }
+
+        .attack-details-panel.detected {
+            border-color: var(--neon-red);
+        }
+
+        .detail-item {
+            border-left: 2px solid var(--neon-blue);
+            padding-left: 8px;
+            transition: border-color 0.5s;
+        }
+
+        .detected .detail-item {
+            border-color: var(--neon-red);
+        }
+
+        .payload-box {
+            grid-column: span 2;
+            background: rgba(0,0,0,0.6);
+            padding: 10px;
+            font-size: 0.65rem;
+            color: var(--neon-blue);
+            word-break: break-all;
+            border-left: 2px solid var(--neon-blue);
+            text-shadow: 0 0 5px rgba(0, 242, 255, 0.4);
+            line-height: 1.5;
+            transition: color 0.5s, border-color 0.5s;
+            max-height: 80px;
+            overflow-y: auto;
+        }
+
+        .detected .payload-box {
+            color: var(--neon-red);
+            border-color: var(--neon-red);
+            text-shadow: 0 0 5px rgba(255, 49, 49, 0.4);
+        }
+
+        .side-menu {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .menu-header-bar {
+            padding: 10px 16px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.85rem;
+            cursor: pointer;
+            background: var(--glass-bg);
+            border: 1px solid rgba(0, 242, 255, 0.3);
+            border-radius: 5px;
+            color: var(--neon-blue);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s, box-shadow 0.2s;
+            box-shadow: 0 0 10px rgba(0, 242, 255, 0.1);
+            user-select: none;
+        }
+
+        .menu-header-bar.active {
+            background: rgba(255, 49, 49, 0.2);
+            border-color: var(--neon-red);
+            color: var(--neon-red);
+        }
+
+        .menu-items {
+            display: flex;
+            flex-direction: column;
+            background: var(--glass-bg);
+            border: 1px solid rgba(0, 242, 255, 0.2);
+            border-radius: 5px;
+            margin-top: 8px;
+            overflow: hidden;
+            width: 220px;
+            max-height: 0;
+            opacity: 0;
+            pointer-events: none;
+            transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+        }
+
+        .menu-items.open {
+            max-height: 500px;
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .nav-link {
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #aaa;
+            text-decoration: none;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 0.8rem;
+            transition: color 0.2s, background 0.2s;
+        }
+
+        .nav-link:hover {
+            color: var(--neon-blue);
+            background: rgba(0, 242, 255, 0.05);
+        }
+
+        .nav-link i { color: var(--neon-blue); width: 20px; }
+
+        .footer-dev {
+            padding: 12px 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            background: rgba(0,0,0,0.3);
+        }
+
+        .ig-handle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: var(--neon-blue);
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="monitor-frame"></div>
+    <canvas id="trafficCanvas"></canvas>
+
+    <div class="ui-container">
+        <main class="main-view">
+            <div id="clock" class="live-clock">00:00:00</div>
+            
+            <div class="header">
+                <h1>IDS - SYSTEM</h1>
+                <div id="status-badge" class="threat-badge">
+                    <div class="threat-dot"></div>
+                    THREAT: NONE
+                </div>
+            </div>
+
+            <div id="alert-overlay" class="central-alert-overlay">
+                <div class="intrusion-card">
+                    <i class="fas fa-biohazard" style="font-size: 2rem; margin-bottom: 10px; display: block;"></i>
+                    <div style="font-family: 'Orbitron'; font-size: 1.2rem; letter-spacing: 1px; color: white;">CRITICAL ALERT</div>
+                    <div style="margin-top: 5px; color: #ffcccc; font-size: 0.8rem;">INTRUSÃO DETECTADA</div>
+                </div>
+            </div>
+
+            <div id="details-panel" class="attack-details-panel">
+                <div class="detail-item">
+                    <label style="color:#666; display:block; font-size:0.5rem;">HORA</label>
+                    <span id="attack-time">--:--:--</span>
+                </div>
+                <div class="detail-item">
+                    <label style="color:#666; display:block; font-size:0.5rem;">ESTADO</label>
+                    <span id="ip-origem">Scanning...</span>
+                </div>
+                <div class="payload-box" id="payload-content">
+                    ESTADO: VIGILÂNCIA NEURAL ATIVA
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <aside class="side-menu">
+        <div class="menu-header-bar" id="btnMenu" onclick="toggleMenu()">
+            MENU <i class="fas fa-bars"></i>
+        </div>
+        <div class="menu-items" id="containerItems">
+            <a href="javascript:void(0)" onclick="navegar('MONITORAMENTO')" class="nav-link"><i class="fas fa-microchip"></i> MONITORAMENTO</a>
+            <a href="javascript:void(0)" onclick="navegar('ALERTAS')" class="nav-link"><i class="fas fa-skull-crossbones"></i> ALERTAS</a>
+            <a href="javascript:void(0)" onclick="navegar('DISPOSITIVOS')" class="nav-link"><i class="fas fa-network-wired"></i> DISPOSITIVOS</a>
+            <a href="javascript:void(0)" onclick="navegar('LOGS')" class="nav-link"><i class="fas fa-terminal"></i> LOGS</a>
+            <a href="javascript:void(0)" onclick="navegar('RELATÓRIOS')" class="nav-link"><i class="fas fa-file-invoice"></i> RELATÓRIOS</a>
+            
+            <div class="footer-dev">
+                <h4 style="font-size: 0.5rem; color: #555; text-transform: uppercase; margin-bottom: 5px;">Desenvolvedor</h4>
+                <a href="https://www.instagram.com/willoliveiradev" target="_blank" class="ig-handle">
+                    <i class="fab fa-instagram"></i>
+                    <span>@willoliveiradev</span>
+                </a>
+            </div>
+        </div>
+    </aside>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+        // 1. RELÓGIO
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').textContent = now.toLocaleTimeString('pt-BR', { hour12: false });
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // 2. TOGGLE MENU
+        function toggleMenu() {
+            document.getElementById('btnMenu').classList.toggle('active');
+            document.getElementById('containerItems').classList.toggle('open');
+        }
+
+        // 3. FUNÇÃO DE NAVEGAÇÃO DOS BOTÕES
+        function navegar(secao) {
+            const payload = document.getElementById('payload-content');
+            const status = document.getElementById('ip-origem');
+            
+            toggleMenu(); // Fecha o menu ao clicar
+            
+            status.textContent = "ACESSANDO...";
+            payload.innerHTML = `SISTEMA: Carregando módulo de ${secao}...<br>Aguardando resposta do servidor...`;
+            
+            console.log("Mudando para seção: " + secao);
+        }
+
+        // 4. ANIMAÇÃO DO FUNDO (CANVAS)
+        const canvas = document.getElementById('trafficCanvas');
+        const ctx = canvas.getContext('2d');
+        let dataPackets = [];
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resize);
+        resize();
+
+        class Packet {
+            constructor() { this.init(); }
+            init() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2 + 0.5;
+                this.speedX = Math.random() * 2 + 1;
+                this.color = Math.random() > 0.9 ? '#ff3131' : '#00f2ff';
+                this.opacity = Math.random() * 0.5;
+            }
+            update() { this.x += this.speedX; if (this.x > canvas.width) this.init(); }
+            draw() {
+                ctx.globalAlpha = this.opacity; ctx.fillStyle = this.color;
+                ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill();
+            }
+        }
+        for(let i = 0; i < 100; i++) dataPackets.push(new Packet());
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            dataPackets.forEach(p => { p.update(); p.draw(); });
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        // 5. CONEXÃO SOCKET (INTELIGÊNCIA ARTIFICIAL)
+        const socket = io();
+        socket.on('attack_alert', function(data) {
+            // Alerta sonoro visual
+            document.getElementById('alert-overlay').style.display = 'block';
+            document.getElementById('status-badge').classList.add('critical');
+            document.getElementById('status-badge').innerHTML = '<div class="threat-dot"></div> THREAT: CRITICAL';
+            document.getElementById('details-panel').classList.add('detected');
+
+            // Preenche dados da IA
+            document.getElementById('attack-time').textContent = data.hora;
+            document.getElementById('ip-origem').textContent = data.ip;
+            document.getElementById('payload-content').innerHTML = `<strong>ALERTA IA:</strong> ${data.categoria} (${data.confianca}%)<br><strong>DATA:</strong> ${data.payload}`;
+            
+            // Remove o overlay após 8 segundos para não travar a tela
+            setTimeout(() => { document.getElementById('alert-overlay').style.display = 'none'; }, 8000);
+        });
+    </script>
+</body>
+</html>

@@ -4,7 +4,7 @@ import shodan
 from sklearn.ensemble import RandomForestClassifier
 
 # Sua chave API do Shodan
-API_KEY = "i3gwQyJmXNX02q5ddFxYeJvycvK146KY"
+API_KEY = input("Sua api: ")
 
 # Inicialização da API do Shodan
 try:

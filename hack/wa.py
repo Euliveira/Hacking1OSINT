@@ -30,8 +30,8 @@ def obter_access_token(email, senha, expiracao_horas=1):
         return None
 
 # --- CONFIGURAÇÃO DOS SEUS DADOS DA DESK DATA ---
-EMAIL_PLATAFORMA = "SEU E-MAIL"  # Mantido seu email cadastrado
-SENHA_PLATAFORMA = "SENHA"        # Mantida sua senha de acesso
+EMAIL_PLATAFORMA = input("SEU E-MAIL: ")  # Mantido seu email cadastrado
+SENHA_PLATAFORMA = input("SENHA: ")        # Mantida sua senha de acesso
 
 # 1. INPUT PARA O USUÁRIO DIGITAR O TELEFONE
 print("=== SISTEMA DE BUSCA REVERSA OSINT ===")

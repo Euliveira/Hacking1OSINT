@@ -411,8 +411,8 @@ def processar_e_gerar_relatorio(resultado_json, telefone_alvo):
         pass
 
 # --- CONFIGURAÇÃO DOS SEUS DADOS DA DESK DATA ---
-EMAIL_PLATAFORMA = "SEU E-MAIL"
-SENHA_PLATAFORMA = "SUA SENHA"
+EMAIL_PLATAFORMA = input("SEU E-MAIL: ")
+SENHA_PLATAFORMA = input("SUA SENHA: ")
 
 # --- EXECUÇÃO DO FLUXO PRINCIPAL ---
 if __name__ == "__main__":
